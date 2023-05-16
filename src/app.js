@@ -1,34 +1,22 @@
 import express from 'express'
-import log4js from 'log4js'
+import createLogger from './utils.js'
 import * as dotenv from 'dotenv'
 dotenv.config()
 
 const app = express()
 
-log4js.configure({
-    appenders: {
-        console: { type: "console" },
-        debugFile: { type: "file", filename: './debug.log'}
-    },
-    categories: {
-        default: {
-            appenders: ["console"], level: "all"
-        },
-        DEV: {
-            appenders: ["console"], level: "all"
-        },
-        PROD: {
-            appenders: ["debugFile"], level: "all"
-        }
-    }
-})
+const logger = createLogger(process.env.ENVIRONMENT)
 
-const logger = log4js.getLogger(process.env.ENVIRONMENT)
+app.use((req, res, next) => {
+    req.logger = logger
+    req.logger.http('info', `${req.method} at ${req.path}`)
+    next()
+})
 
 app.get('/login', (req, res) => {
     const { username, password } = req.query
     if (!username) {
-        logger.error('No se envió un username')
+        // logger.error('No se envió un username')
         return res.send('KO')
     }
     res.send('Ok')
